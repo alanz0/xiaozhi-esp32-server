@@ -94,27 +94,37 @@ async def process_intent_result(conn, intent_result, original_text):
             # 使用executor执行函数调用和结果处理
             def process_function_call():
                 conn.dialogue.put(Message(role="user", content=original_text))
-                result = conn.func_handler.handle_llm_function_call(
-                    conn, function_call_data
-                )
-                if result and function_name != "play_music":
-                    # 获取当前最新的文本索引
-                    text = result.response
-                    if text is None:
-                        text = result.result
-                    if text is not None:
-                        text_index = (
+                if conn.mcp_manager.is_mcp_tool(function_name):
+                    result = conn._handle_mcp_tool_call(function_call_data)
+                else:
+                    # 处理系统函数
+                    result = conn.func_handler.handle_llm_function_call(
+                        conn, function_call_data
+                    )
+                text_index = (
                             conn.tts_last_text_index + 1
                             if hasattr(conn, "tts_last_text_index")
                             else 0
                         )
-                        conn.recode_first_last_text(text, text_index)
-                        future = conn.executor.submit(
-                            conn.speak_and_play, text, text_index
-                        )
-                        conn.llm_finish_task = True
-                        conn.tts_queue.put(future)
-                        conn.dialogue.put(Message(role="assistant", content=text))
+                conn._handle_function_result(result, function_call_data, text_index + 1)
+                # if result and function_name != "play_music":
+                #     # 获取当前最新的文本索引
+                #     text = result.response
+                #     if text is None:
+                #         text = result.result
+                #     if text is not None:
+                #         text_index = (
+                #             conn.tts_last_text_index + 1
+                #             if hasattr(conn, "tts_last_text_index")
+                #             else 0
+                #         )
+                #         conn.recode_first_last_text(text, text_index)
+                #         future = conn.executor.submit(
+                #             conn.speak_and_play, text, text_index
+                #         )
+                #         conn.llm_finish_task = True
+                #         conn.tts_queue.put(future)
+                #         conn.dialogue.put(Message(role="assistant", content=text))
 
             # 将函数执行放在线程池中
             conn.executor.submit(process_function_call)

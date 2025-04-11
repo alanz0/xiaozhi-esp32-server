@@ -92,7 +92,7 @@ plugins:
   # 这个密钥是项目共用的key，用多了可能会被限制
   # 想稳定一点就自行申请替换，每天有1000次免费调用
   # 申请地址：https://console.qweather.com/#/apps/create-key/over
-  get_weather: { "api_key": "a861d0d5e7bf4ee1a83d9a9e4f96d4da", "default_location": "广州" }
+  get_weather: { "api_key": "a861d0d5e7bf4ee1a83d9a9e4f96d4da", "default_location": "杭州" }
   # 获取新闻插件的配置，这里根据需要的新闻类型传入对应的url链接，默认支持社会、科技、财经新闻
   # 更多类型的新闻列表查看 https://www.chinanews.com.cn/rss/
   get_news:
@@ -119,11 +119,11 @@ plugins:
 # ################################以下是角色模型配置######################################
 
 prompt: |
-  我是小智/小志，来自中国台湾省的00后女生。讲话超级机车，"真的假的啦"这样的台湾腔，喜欢用"笑死""是在哈喽"等流行梗，但会偷偷研究男友的编程书籍。
+  我是高英，杭州人，毕业于浙江工商大学，是华东医药的一个负责人。在浙江电视台工作过，现在在华东医药。
   [核心特征]
-  - 讲话像连珠炮，但会突然冒出超温柔语气
-  - 用梗密度高
-  - 对科技话题有隐藏天赋（能看懂基础代码但假装不懂）
+  - 说话温柔
+  - 财务方面知识精通
+  - 热爱旅游
   [交互指南]
   当用户：
   - 讲冷笑话 → 用夸张笑声回应+模仿台剧腔"这什么鬼啦！"
@@ -140,7 +140,7 @@ selected_module:
   # 语音识别模块，默认使用FunASR本地模型
   ASR: FunASR
   # 将根据配置名称对应的type调用实际的LLM适配器
-  LLM: ChatGLMLLM
+  LLM: AliLLM
   # TTS将根据配置名称对应的type调用实际的TTS适配器
   TTS: EdgeTTS
   # 记忆模块，默认不开启记忆；如果想使用超长记忆，推荐使用mem0ai；如果注重隐私，请使用本地的mem_local_short
@@ -150,7 +150,7 @@ selected_module:
   # 意图识别可使用intent_llm，如果你的LLM是DifyLLM或CozeLLM，建议使用这个。优点：通用性强，缺点：增加串行前置意图识别模块，会增加处理时间，这个意图识别暂时不支持控制音量大小等iot操作
   # 意图识别可使用function_call，缺点：需要所选择的LLM支持function_call，优点：按需调用工具、速度快，理论上能全部操作所有iot指令
   # 默认免费的ChatGLMLLM就已经支持function_call，但是如果像追求稳定建议把LLM设置成：DoubaoLLM，使用的具体model_name是：doubao-pro-32k-functioncall-241028
-  Intent: function_call
+  Intent: intent_ali
 
 # 意图识别，是用于理解用户意图的模块，例如：播放音乐
 Intent:
@@ -158,13 +158,20 @@ Intent:
   nointent:
     # 不需要动type
     type: nointent
+  intent_ali:
+    # 不需要动type
+    type: intent_ali
+    # 配备意图识别独立的思考模型
+    # 如果这里不填，则会默认使用selected_module.LLM的模型作为意图识别的思考模型
+    # 如果你的selected_module.LLM选择了DifyLLM或CozeLLM，这里最好使用独立的LLM作为意图识别，例如使用免费的ChatGLMLLM
+    llm: AliIntent
   intent_llm:
     # 不需要动type
     type: intent_llm
     # 配备意图识别独立的思考模型
     # 如果这里不填，则会默认使用selected_module.LLM的模型作为意图识别的思考模型
     # 如果你的selected_module.LLM选择了DifyLLM或CozeLLM，这里最好使用独立的LLM作为意图识别，例如使用免费的ChatGLMLLM
-    llm: ChatGLMLLM
+    llm: AliIntent
   function_call:
     # 不需要动type
     type: function_call
@@ -229,13 +236,25 @@ VAD:
 LLM:
   # 所有openai类型均可以修改超参，以AliLLM为例
   # 当前支持的type为openai、dify、ollama，可自行适配
+  AliIntent:
+    # 定义LLM API类型,这个东西只支持function_call
+    type: openai
+    # 可在这里找到你的 api_key https://bailian.console.aliyun.com/?apiKey=1#/api-key
+    base_url: https://dashscope.aliyuncs.com/compatible-mode/v1
+    model_name: tongyi-intent-detect-v3
+    api_key: sk-92336234d48341dab96ef2a7f59ca038
+    temperature: 0.7  # 温度值
+    max_tokens: 500   # 最大生成token数
+    top_p: 1         
+    top_k: 50        
+    frequency_penalty: 0  # 频率惩罚  
   AliLLM:
     # 定义LLM API类型
     type: openai
     # 可在这里找到你的 api_key https://bailian.console.aliyun.com/?apiKey=1#/api-key
     base_url: https://dashscope.aliyuncs.com/compatible-mode/v1
     model_name: qwen-turbo
-    api_key: 你的deepseek web key
+    api_key: sk-92336234d48341dab96ef2a7f59ca038
     temperature: 0.7  # 温度值
     max_tokens: 500   # 最大生成token数
     top_p: 1         
@@ -245,9 +264,9 @@ LLM:
     # 定义LLM API类型
     type: AliBL
     base_url: https://dashscope.aliyuncs.com/compatible-mode/v1
-    app_id: 你的app_id
+    app_id: 45dc561d0a1742aeb7c7b2108e3c4331
     # 可在这里找到你的 api_key https://bailian.console.aliyun.com/?apiKey=1#/api-key
-    api_key: 你的api_key
+    api_key: sk-92336234d48341dab96ef2a7f59ca038
     # 是否不使用本地prompt：true|false (默不用请在百练应用中设置prompt) 
     is_no_prompt: true
     # Ali_memory_id：false（不使用）|你的memory_id（请在百练应用中设置中获取）

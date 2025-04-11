@@ -244,8 +244,8 @@ class ConnectionHandler:
         if intent_type == "nointent":
             return
         # 使用 intent_llm 模式
-        elif intent_type == "intent_llm":
-            intent_llm_name = intent_config["intent_llm"]["llm"]
+        elif intent_type == "intent_llm" or intent_type == "intent_ali":
+            intent_llm_name = intent_config[intent_type]["llm"]
 
             if intent_llm_name and intent_llm_name in self.config["LLM"]:
                 # 如果配置了专用LLM，则创建独立的LLM实例
